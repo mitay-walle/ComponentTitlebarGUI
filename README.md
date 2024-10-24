@@ -14,10 +14,7 @@ public static void InitTest()
 
 private static void TestGUI(Rect rect, Object target)
 {
-  if (target is not MonoBehaviour) return;
-  rect.x = rect.width - 80;
-  
-  GUI.Label(rect, content);
-  //GUILayout.Label(content);
+  if (target is not MonoBehaviour) return;  
+  GUI.Label(rect, EditorGUIUtility.IconContent("console.erroricon.sml"));
 }
 ```
