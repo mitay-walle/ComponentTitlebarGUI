@@ -6,9 +6,8 @@ Unity3d script that add callback to draw MGUI upon any Component Titlebar
 # Usage Example
 ```
 [InitializeOnLoadMethod]
-public static void InitTest()
+public static void Init()
 {
-  ComponentTitlebarGUI.OnTitlebarGUI -= TestGUI;
   ComponentTitlebarGUI.OnTitlebarGUI += TestGUI;
 }
 
