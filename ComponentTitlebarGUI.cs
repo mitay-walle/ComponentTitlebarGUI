@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
@@ -12,6 +13,8 @@ namespace UnityEditor.Custom
 		public static Action<Rect, Object> OnTitlebarGUI;
 
 #if UNITY_EDITOR
+		private static ProfilerMarker _profileMarker = new ProfilerMarker($"{nameof(ComponentTitlebarGUI)}.{nameof(OnUpdate)}");
+		private static ProfilerMarker _profileMarker2 = new ProfilerMarker($"{nameof(ComponentTitlebarGUI)}.OnTitlebarGUI");
 		private static Type type = typeof(EditorWindow).Assembly.GetType("UnityEditor.InspectorWindow");
 		private static Type type2 = typeof(EditorWindow).Assembly.GetType("UnityEditor.PropertyEditor");
 		private static Type type3 = typeof(EditorWindow).Assembly.GetType("UnityEditor.UIElements.EditorElement");
@@ -46,45 +49,50 @@ namespace UnityEditor.Custom
 
 		private static void OnUpdate()
 		{
-			VisualElement inspectorRoot = editorsElement;
-			if (inspectorRoot == null) return;
-
-			var foundAll = editorsElement.Children();
-			foreach (VisualElement element in foundAll)
+			using (_profileMarker.Auto())
 			{
-				if (element.GetType() != type3) continue;
+				VisualElement inspectorRoot = editorsElement;
+				if (inspectorRoot == null) return;
 
-				var localTarget = field3.GetValue(element) as Object;
-				if (localTarget)
+				var foundAll = editorsElement.Children();
+				foreach (VisualElement element in foundAll)
 				{
-					IMGUIContainer value2 = field2.GetValue(element) as IMGUIContainer;
-					Action callback = null;
-					if (_callbacks.TryGetValue(element, out var found))
-					{
-						callback = found;
-					}
-					else
-					{
-						callback = _callbacks[element] = MyLocalCallback;
-					}
+					if (element.GetType() != type3) continue;
 
-					if (value2 != null)
+					var localTarget = field3.GetValue(element) as Object;
+					if (localTarget)
 					{
-						value2.onGUIHandler -= callback;
-						value2.onGUIHandler += callback;
-					}
+						IMGUIContainer value2 = field2.GetValue(element) as IMGUIContainer;
+						Action callback = null;
+						if (_callbacks.TryGetValue(element, out var found))
+						{
+							callback = found;
+						}
+						else
+						{
+							callback = _callbacks[element] = MyLocalCallback;
+						}
 
-					void MyLocalCallback()
-					{
-						try
+						if (value2 != null)
 						{
-							OnTitlebarGUI?.Invoke(GUILayoutUtility.GetLastRect(), localTarget);
+							value2.onGUIHandler -= callback;
+							value2.onGUIHandler += callback;
 						}
-						catch (Exception e)
+
+						void MyLocalCallback()
 						{
-							Debug.LogException(e);
+							using (_profileMarker2.Auto())
+							{
+								try
+								{
+									OnTitlebarGUI?.Invoke(GUILayoutUtility.GetLastRect(), localTarget);
+								}
+								catch (Exception e)
+								{
+									Debug.LogException(e);
+								}
+							}
 						}
-						finally { }
 					}
 				}
 			}
